@@ -9,21 +9,6 @@ import type { Message } from '../types';
  * @returns A promise that resolves to the success message from the backend.
  */
 export async function ingestFile(filePath: string, userId: string): Promise<string> {
-    // ====================================================================================
-    // IMPORTANT NOTE ON FILE INGESTION
-    // ====================================================================================
-    // Web browsers have strict security policies that prevent web pages from accessing a
-    // user's local file system directly. This means when a user selects a file using the
-    // "Browse" button, we can only get the file's name (e.g., "my_document.pdf"), NOT
-    // its full local path (e.g., "C:\\Users\\YourName\\Documents\\my_document.pdf").
-    //
-    // This function prepends a hardcoded local path to the file name.
-    //
-    // REQUIRED BACKEND CONFIGURATION:
-    // This assumes your files are located in "C:\\Users\\Varsha Singh\\Downloads\\".
-    // Your `gemini_cli_server` should be able to access this path.
-    // ====================================================================================
-    
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 180000); // 3 minutes
 
@@ -57,13 +42,12 @@ export async function ingestFile(filePath: string, userId: string): Promise<stri
                     errorMessage = errorData.detail;
                 }
             } catch (e) {
-                // Not a JSON response, errorMessage is already set to errorText which is what we want.
+                
             }
             console.error(`Backend server error during ingestion: ${apiResponse.status}`, responseText);
             throw new Error(errorMessage);
         }
 
-        // Per user request, return the raw response from the server as-is.
         return responseText;
 
     } catch (error) {
@@ -141,9 +125,6 @@ export async function generateResponse(
             parts: [{ text: msg.text }]
         }));
 
-        // FIX: Reverted from POST to GET. The backend server expects a GET request for the
-        // /prompt endpoint, and using POST was causing a "405 Method Not Allowed" error. All
-        // parameters are now sent in the query string as the server expects.
         const params = new URLSearchParams();
         params.append('prompt', prompt);
         params.append('tenant_id', tenantId);
@@ -181,8 +162,6 @@ export async function generateResponse(
             throw new Error(errorMessage);
         }
 
-        // Per user request, always return the raw text response. The calling component
-        // is responsible for parsing it based on the context (e.g., web search vs. document query).
         return responseText;
 
     } catch (error) {

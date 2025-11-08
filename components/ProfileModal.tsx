@@ -47,13 +47,12 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUse
         setIsLoggingOut(true);
         try {
             await authService.signOut();
-            // The onAuthStateChange listener in App.tsx will now handle redirecting the user
-            // to the login page. Forcing a reload is no longer necessary.
+            
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to log out.');
             setIsLoggingOut(false);
         }
-        // The spinner will continue until the component unmounts upon successful logout.
+        
     };
 
     const handleDeleteAccount = async () => {
@@ -63,8 +62,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ user, onClose, onUse
         setIsDeleting(true);
         try {
             await authService.deleteUserAccount();
-             // The onAuthStateChange listener in App.tsx will automatically handle
-             // the user being redirected upon successful deletion.
+             
         } catch(err) {
             setError(err instanceof Error ? err.message : 'Failed to delete account.');
             setIsDeleting(false); // only stop spinner on error

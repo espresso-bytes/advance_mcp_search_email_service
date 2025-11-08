@@ -13,62 +13,54 @@ import { ConfirmationModal } from './ConfirmationModal';
 
 type ConversationWithState = Conversation & { messagesLoaded?: boolean };
 
-// Helper to sanitize raw AI text response.
 const sanitizeAIResponse = (text: string): string => {
     let cleanedText = (text || '').trim();
 
-    // The backend sometimes returns a string that is itself a JSON-encoded string,
-    // complete with outer quotes and escaped characters (e.g., "\"Hello \\n world\"").
-    // The most reliable way to clean this is to parse it as JSON.
     try {
         const parsed = JSON.parse(cleanedText);
-        // If it parses into a string, we've successfully unescaped and un-quoted it.
+        
         if (typeof parsed === 'string') {
             cleanedText = parsed.trim();
         }
-        // If it parses into something else (like an object), we assume the original
-        // string was not meant to be a simple text response, so we leave it as is for now.
+       
     } catch (e) {
-        // If JSON.parse fails, it's not a valid JSON literal.
-        // It might be a simple string with quotes that we can manually remove as a fallback.
         if (cleanedText.startsWith('"') && cleanedText.endsWith('"')) {
             cleanedText = cleanedText.substring(1, cleanedText.length - 1);
         }
     }
 
-    // Finally, remove any leading punctuation that's unlikely to be intentional,
-    // which can result from truncated or oddly formed model outputs.
+    // remove any leading punctuation that's unlikely to be intentional,
+    // which can result from truncated or oddly formed outputs.
     cleanedText = cleanedText.replace(/^[\s,;.:]+/, '');
     
     return cleanedText;
 };
 
 
-// Helper function to render formatted text from AI, handling markdown-like syntax.
+// Helper function to render formatted text from AI
 const renderFormattedText = (text: string) => {
-    // Unescape newlines (e.g., "\\n" -> "\n") and then split into individual lines
+    
     const lines = text.replace(/\\n/g, '\n').split('\n');
   
     return lines.map((line, index) => {
-      // Handle list items that start with '* '
+      
       let processedLine = line;
       if (processedLine.trim().startsWith('* ')) {
-        // Replace with a bullet point for better visual representation of a list
+        
         processedLine = '• ' + processedLine.trim().substring(2);
       }
   
-      // Handle bold text which is enclosed in double asterisks, e.g., **text**
+      
       const parts = processedLine.split('**');
       const elements = parts.map((part, i) => {
-        // Parts at odd indices are inside the asterisks, so they should be bold
+       
         if (i % 2 === 1) {
           return <strong key={i}>{part}</strong>;
         }
-        // Even-indexed parts are regular text
+        
         return <React.Fragment key={i}>{part}</React.Fragment>;
       });
   
-      // Return the formatted line, adding a line break if it's not the last line
       return (
         <React.Fragment key={index}>
           {elements}
@@ -91,8 +83,6 @@ const ToggleSwitch: React.FC<{ isEnabled: boolean; onToggle: () => void; disable
     </button>
 );
 
-// Main ChatView Component
-// FIX: Updated the onUserUpdate prop type to expect a Promise, aligning with its async nature.
 export const ChatView: React.FC<{ user: User; onUserUpdate: () => Promise<void>; }> = ({ user, onUserUpdate }) => {
     const [conversations, setConversations] = useState<ConversationWithState[]>([]);
     const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
@@ -142,7 +132,7 @@ export const ChatView: React.FC<{ user: User; onUserUpdate: () => Promise<void>;
         }
     }, [user.id]);
 
-    // Initial load of conversations (fast, no messages)
+   
     useEffect(() => {
         const loadConversations = async () => {
             const userConversations = await dataService.getConversations(user.id);
@@ -156,7 +146,7 @@ export const ChatView: React.FC<{ user: User; onUserUpdate: () => Promise<void>;
         loadConversations();
     }, [user.id, handleNewChat]);
 
-    // Load messages for active conversation (on demand)
+    
     useEffect(() => {
         if (!activeConversationId) return;
         const activeConv = conversations.find(c => c.id === activeConversationId);
@@ -172,7 +162,7 @@ export const ChatView: React.FC<{ user: User; onUserUpdate: () => Promise<void>;
         }
     }, [activeConversationId, conversations]);
 
-    // Manages active conversation, ensuring one is always selected or created.
+    
      useEffect(() => {
         if (!activeConversationId && conversations.length > 0) {
             setActiveConversationId(conversations[0].id);
@@ -182,9 +172,8 @@ export const ChatView: React.FC<{ user: User; onUserUpdate: () => Promise<void>;
 
     useEffect(() => {
         if(activeConversation) {
-            // BUGFIX: Removed automatic clearing of system messages on conversation switch,
-            // as it was preventing messages like "Conversation deleted" from being seen.
-            // Timeouts are now used on all system messages for consistent behavior.
+            
+            // Timeouts on all system messages for consistent behavior.
             setWebSearch(activeConversation.is_web_search_enabled || false);
         }
     }, [activeConversation]);
@@ -203,10 +192,9 @@ export const ChatView: React.FC<{ user: User; onUserUpdate: () => Promise<void>;
         const fileName = selectedFile.name;
     
         try {
-            // Await the ingestion API call. If it fails, the catch block will handle it.
+            
             await ingestFile(fileName, user.id);
             
-            // Immediately update the conversation in the database to be a document-based conversation.
             await dataService.updateConversation(activeConversationId, {
                 file_name: fileName,
                 is_web_search_enabled: false
@@ -224,7 +212,7 @@ export const ChatView: React.FC<{ user: User; onUserUpdate: () => Promise<void>;
                 throw new Error("Failed to save the ingestion response message.");
             }
     
-            // Update the local state to reflect all changes in the UI.
+          
             setConversations(prev => prev.map(c => {
                 if (c.id === activeConversationId) {
                     const isNewChat = c.title === 'New Chat';
