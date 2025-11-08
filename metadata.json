@@ -1,0 +1,5 @@
+{
+  "name": "Advanced MCP Search1",
+  "description": "An intelligent search application that queries uploaded documents and the web, providing comprehensive answers in a conversational interface.",
+  "requestFramePermissions": []
+}
